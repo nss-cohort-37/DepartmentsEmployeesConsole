@@ -160,7 +160,7 @@ namespace DepartmentsEmployeesConsole.Data
                             }
                         };
 
-                        // Now we can close the connection
+                        // Now we can close the reader
                         reader.Close();
 
                         return employee;
@@ -170,6 +170,77 @@ namespace DepartmentsEmployeesConsole.Data
                         // We didn't find the employee with that ID in the database. return null
                         return null;
                     }
+                }
+            }
+        }
+    
+    
+        // Create a new employee
+        public Employee CreateNewEmployee(Employee employeeToAdd)
+        {
+            using(SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        INSERT INTO Employee (FirstName, LastName, DepartmentId)
+                        OUTPUT INSERTED.Id
+                        VALUES (@firstName, @lastName, @departmentId)";
+
+                    cmd.Parameters.Add(new SqlParameter("@firstName", employeeToAdd.FirstName));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", employeeToAdd.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@departmentId", employeeToAdd.DepartmentId));
+
+                    int id = (int)cmd.ExecuteScalar();
+
+                    employeeToAdd.Id = id;
+
+                    return employeeToAdd;
+                }
+            }
+        }
+
+        // Update Employee
+        public void UpdateEmployee(int employeeId, Employee employee)
+        {
+            using(SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                using(SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        UPDATE Employee
+                        SET FirstName = @firstName, LastName = @lastName, DepartmentId = @departmentId
+                        WHERE Id = @id";
+
+                    cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
+                    cmd.Parameters.Add(new SqlParameter("@id", employeeId));
+
+                    // We don't expect anything back from the database (it's not really a "query", so we can say Execute NonQuery
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        // Delete an employee
+        public void DeleteEmployee(int employeeId)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                using(SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "DELETE FROM Employee WHERE Id = @id";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", employeeId));
+
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
